@@ -1,0 +1,28 @@
+[Unit]
+Description=iptables service
+Before=network-pre.target
+Wants=network-pre.target
+After=dbus.service
+Conflicts=iptables.service ip6tables.service ebtables.service ipset.service firewalld.service ufw.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=/bin/bash -c "\
+    while IFS= read -r rule; do \
+        eval iptables -C $(cut -d ' ' -f 2- <<< $rule) &> /dev/null; \
+        if [ $? -eq 1 ]; then \
+            eval iptables $rule --verbose; \
+        fi; \
+    done < <(cat {{ iptables_confd_path }}/*.rules | grep -Ev '^$|^#'); \
+    /bin/tail -f /dev/null"
+ExecReload=/bin/bash -c "\
+    for TABLE in {{ iptables_flush_tables | join(' ') }}; do \
+        iptables -t $TABLE -F; \
+        iptables -t $TABLE -X; \
+    done; \
+    /bin/kill -HUP $MAINPID"
+KillMode=mixed
+Restart=always
+RestartSec=1s 

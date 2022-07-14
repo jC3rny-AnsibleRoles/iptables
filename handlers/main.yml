@@ -1,0 +1,20 @@
+---
+# [ iptables - handlers ]
+
+- name: daemon-reload
+  systemd:
+    daemon_reload: yes
+
+- name: Restart firewall service
+  systemd:
+    name: firewall
+    enabled: yes
+    masked: no
+    state: restarted
+
+- name: Reload firewall service
+  systemd:
+    name: firewall
+    enabled: yes
+    masked: no
+    state: reloaded
