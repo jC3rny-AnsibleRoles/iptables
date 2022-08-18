@@ -1,7 +1,7 @@
 ---
 # [ iptables - handlers ]
 
-- name: daemon-reload
+- name: daemon-reload (iptables)
   systemd:
     daemon_reload: yes
 

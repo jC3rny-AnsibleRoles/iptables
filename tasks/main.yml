@@ -27,7 +27,7 @@
   template:
     src: "firewall.service.j2"
     dest: "/etc/systemd/system/firewall.service"
-  notify: [ "daemon-reload", "{{ (iptables_firewall_service_always_reload | bool) | ternary('Reload', 'Restart') }} firewall service" ]
+  notify: [ "daemon-reload (iptables)", "{{ (iptables_firewall_service_always_reload | bool) | ternary('Reload', 'Restart') }} firewall service" ]
   tags: [ install-iptables, apply-iptables_service_template ]
 
 - meta: flush_handlers
@@ -76,11 +76,11 @@
 
 
 # Notify handlers
-- name: Notify handler - daemon-reload
+- name: Notify handler - daemon-reload (iptables)
   debug: msg="Notify handler"
-  notify: daemon-reload
+  notify: daemon-reload (iptables)
   changed_when: true
-  tags: [ never, notify-handler_daemon_reload, notify-handlers_role_iptables, notify-handlers_all  ]
+  tags: [ never, notify-handler_iptables_daemon_reload, notify-handlers_role_iptables, notify-handlers_all  ]
 
 - name: Notify handler - Restart firewall service
   debug: msg="Notify handler"
