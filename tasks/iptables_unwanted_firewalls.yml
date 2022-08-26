@@ -1,0 +1,47 @@
+---
+# [ iptables - tasks/iptables_unwanted_firewalls.yml ]
+
+# Backup current firewall rules
+- name: Backup current firewall rules
+  shell: "iptables-save | tee $HOME/iptables_$(date +'%Y%m%d_%H%M%S_%3N').bak"
+  changed_when: no
+
+
+# FirewallD
+- block:
+  # Disable firewalld service
+  - name: Disable firewalld service
+    systemd:
+      name: firewalld
+      enabled: no
+      masked: yes
+      state: stopped
+  
+  # Uninstall firewalld package
+  - name: Uninstall firewalld package
+    package:
+      name: firewalld
+      state: absent
+    when: "'uninstall-iptables_firewalld' in ansible_run_tags"
+
+  when: ('uninstall-iptables_firewalld' in ansible_run_tags) or 'disable-iptables_firewalld_service' in ansible_run_tags
+
+
+# UFW
+- block:
+  # Disable ufw service
+  - name: Disable ufw service
+    systemd:
+      name: ufw
+      enabled: no
+      masked: yes
+      state: stopped
+  
+  # Uninstall ufw package
+  - name: Uninstall ufw package
+    package:
+      name: ufw
+      state: absent
+    when: "'uninstall-iptables_ufw' in ansible_run_tags"
+  
+  when: ('uninstall-iptables_ufw' in ansible_run_tags) or 'disable-iptables_ufw_service' in ansible_run_tags

@@ -1,6 +1,20 @@
 ---
 # [ iptables - tasks ]
 
+# Manage unwanted firewalls
+- name: Manage unwanted firewalls
+  include_tasks:
+    file: "roles/{{ role_name }}/tasks/iptables_unwanted_firewalls.yml"
+    apply:
+      tags: [ always ]
+  tags:
+    - never
+    - uninstall-iptables_firewalld
+    - disable-iptables_firewalld_service
+    - uninstall-iptables_ufw
+    - disable-iptables_ufw_service
+
+
 # Install iptables package
 - name: Install iptables package
   package:
