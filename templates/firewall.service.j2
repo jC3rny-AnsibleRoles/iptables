@@ -15,7 +15,7 @@ ExecStart=/bin/bash -c "\
         if [ $? -eq 1 ]; then \
             eval iptables $rule --verbose; \
         fi; \
-    done < <(cat {{ iptables_confd_path }}/*.rules | grep -Ev '^$|^#'); \
+    done < <(cat {{ iptables_confd_path }}/*.rules | grep -Ev '^$|^#|^-P'); \
     /bin/tail -f /dev/null"
 ExecReload=/bin/bash -c "\
     for TABLE in {{ iptables_flush_tables | join(' ') }}; do \
@@ -25,4 +25,4 @@ ExecReload=/bin/bash -c "\
     /bin/kill -HUP $MAINPID"
 KillMode=mixed
 Restart=always
-RestartSec=1s 
+RestartSec=1s
