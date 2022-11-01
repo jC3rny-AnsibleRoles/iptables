@@ -3,7 +3,7 @@
 
 # Manage unwanted firewalls
 - name: Manage unwanted firewalls
-  include_tasks:
+  ansible.builtin.include_tasks:
     file: "roles/{{ role_name }}/tasks/iptables_unwanted_firewalls.yml"
     apply:
       tags: [ always ]
@@ -17,7 +17,7 @@
 
 # Install iptables package
 - name: Install iptables package
-  package:
+  ansible.builtin.package:
     name: [ iptables, conntrack ]
     state: present
   tags: [ install-iptables ]
@@ -25,12 +25,12 @@
 
 # Setup iptables sysctl params
 - name: Setup iptables sysctl params
-  sysctl:
+  ansible.posix.sysctl:
     sysctl_file: /etc/sysctl.d/20-iptables.conf
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
-    reload: yes
+    reload: true
   with_items: "{{ iptables_sysctl_params }}"
   when: iptables_sysctl_params != []
   tags: [ install-iptables, check-iptables_sysctl_params ]
@@ -38,74 +38,83 @@
 
 # Apply firewall service template
 - name: Apply firewall service template
-  template:
+  ansible.builtin.template:
     src: "firewall.service.j2"
     dest: "/etc/systemd/system/firewall.service"
+    owner: root
+    group: root
+    mode: "0644"
   notify: [ "daemon-reload (iptables)", "{{ (iptables_firewall_service_always_reload | bool) | ternary('Reload', 'Restart') }} firewall service" ]
   tags: [ install-iptables, apply-iptables_service_template ]
 
-- meta: flush_handlers
+- ansible.builtin.meta: flush_handlers
 
 
 # Set iptables conf.d location
 - name: Set iptables conf.d location
-  file:
+  ansible.builtin.file:
     path: "/etc/iptables/conf.d"
     state: directory
-    recurse: yes
+    recurse: true
   tags: [ install-iptables, set-iptables ]
 
 
 # Manage firewall rules
 - block:
-  # Set firewall rules
-  - name: Set firewall rules
-    copy:
-      dest: "{{ iptables_confd_path }}/{{ lookup('dict', item).key }}.rules"
-      content: "{{ lookup('dict', item).value }}"
-    register: iptables_managed_files
-    notify: "{{ (iptables_firewall_service_always_reload | bool) | ternary('Reload', 'Restart') }} firewall service"
-    with_items: "{{ iptables_rules }}"
-  
-  - meta: flush_handlers
-  
-  # Lookup unmanaged files
-  - name: Lookup unmanaged files
-    shell: "find {{ iptables_confd_path }} -name '*.rules'"
-    changed_when: no
-    register: iptables_managed_directory
-  
-  # Remove unmanaged files
-  - name: Remove unmanaged files
-    file:
-      path: "{{ item }}"
-      state: absent
-    notify: "Reload firewall service"
-    with_items: "{{ iptables_managed_directory.stdout_lines }}"
-    when: item not in (iptables_managed_files.results | map(attribute='dest'))
-  
-  - meta: flush_handlers
+    # Set firewall rules
+    - name: Set firewall rules
+      ansible.builtin.copy:
+        dest: "{{ iptables_confd_path }}/{{ lookup('dict', item).key }}.rules"
+        content: "{{ lookup('dict', item).value }}"
+        owner: root
+        group: root
+        mode: "0644"
+      register: iptables_managed_files
+      notify: "{{ (iptables_firewall_service_always_reload | bool) | ternary('Reload', 'Restart') }} firewall service"
+      with_items: "{{ iptables_rules }}"
+
+    - ansible.builtin.meta: flush_handlers
+
+    # Lookup unmanaged files
+    - name: Lookup unmanaged files
+      ansible.builtin.shell: "find {{ iptables_confd_path }} -name '*.rules'"
+      changed_when: false
+      register: iptables_managed_directory
+
+    # Remove unmanaged files
+    - name: Remove unmanaged files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      notify: "Reload firewall service"
+      with_items: "{{ iptables_managed_directory.stdout_lines }}"
+      when: item not in (iptables_managed_files.results | map(attribute='dest'))
+
+    - ansible.builtin.meta: flush_handlers
 
   tags: [ install-iptables, set-iptables, update-iptables_firewall_rules ]
 
 
 # Notify handlers
 - name: Notify handler - daemon-reload (iptables)
-  debug: msg="Notify handler"
+  ansible.builtin.debug:
+    msg: Notify handler
   notify: daemon-reload (iptables)
   changed_when: true
   tags: [ never, notify-handler_iptables_daemon_reload, notify-handlers_role_iptables, notify-handlers_all  ]
 
 - name: Notify handler - Restart firewall service
-  debug: msg="Notify handler"
+  ansible.builtin.debug:
+    msg: Notify handler
   notify: Restart firewall service
   changed_when: true
   tags: [ never, notify-handler_restart_firewall_service, notify-handlers_role_iptables, notify-handlers_all  ]
 
 - name: Notify handler - Reload firewall service
-  debug: msg="Notify handler"
+  ansible.builtin.debug:
+    msg: Notify handler
   notify: Reload firewall service
   changed_when: true
   tags: [ never, notify-handler_reload_firewall_service, notify-handlers_role_iptables, notify-handlers_all  ]
 
-- meta: flush_handlers
+- ansible.builtin.meta: flush_handlers

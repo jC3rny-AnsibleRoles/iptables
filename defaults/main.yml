@@ -8,14 +8,14 @@ iptables_confd_path: "/etc/iptables/conf.d"
 
 iptables_flush_tables: [ "raw", "mangle", "nat", "filter", "security" ]
 
-iptables_firewall_service_always_reload: yes
+iptables_firewall_service_always_reload: true
 
 iptables_rules: "{{ iptables_default_rules + iptables_additional_rules }}"
 
 iptables_default_rules:
   - "01-chains": |
       -N LOGGING
-  
+
   - "51-filter_input": |
       -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       -A INPUT -i lo -j ACCEPT
@@ -26,22 +26,22 @@ iptables_default_rules:
       -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       -A FORWARD -i lo -j ACCEPT
       -A FORWARD -p icmp -j ACCEPT
-  
+
   - "53-filter_output": |
       -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
       -A OUTPUT -o lo -j ACCEPT
       -A OUTPUT -p icmp -j ACCEPT
       # -A OUTPUT -p tcp -m tcp --sport 22 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-  
+
   - "90-logging": |
       -A INPUT -j LOGGING
       -A FORWARD -j LOGGING
       # -A OUTPUT -j LOGGING
-  
+
   - "95-logging_log": |
       -A LOGGING -m limit --limit 2/min -j LOG --log-uid --log-prefix "iptables [WARNNG] " --log-level 7
       -A LOGGING -j DROP
-  
+
   - "99-chain_policy": |
       -P INPUT DROP
       -P FORWARD DROP

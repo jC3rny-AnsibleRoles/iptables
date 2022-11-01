@@ -2,19 +2,19 @@
 # [ iptables - handlers ]
 
 - name: daemon-reload (iptables)
-  systemd:
-    daemon_reload: yes
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 - name: Restart firewall service
-  systemd:
+  ansible.builtin.systemd:
     name: firewall
-    enabled: yes
-    masked: no
+    enabled: true
+    masked: false
     state: restarted
 
 - name: Reload firewall service
-  systemd:
+  ansible.builtin.systemd:
     name: firewall
-    enabled: yes
-    masked: no
+    enabled: true
+    masked: false
     state: reloaded
